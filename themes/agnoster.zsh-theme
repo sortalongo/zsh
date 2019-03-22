@@ -79,9 +79,12 @@ prompt_end() {
 
 # Context: user@hostname (who am I and where am I)
 prompt_context() {
-  if [[ "$USER" != "$DEFAULT_USER" || -n "$SSH_CLIENT" ]]; then
-    prompt_segment black default "%(!.%{%F{yellow}%}.)$USER@%m"
-  fi
+  local symbols
+  symbols=()
+  symbols+="%(!.%{%F{yellow}%}.)"
+  [[ "$USER" != "$DEFAULT_USER" ]] && symbols+="$USER"
+  [[ -n "$SSH_CLIENT" ]] && symbols+="@$(hostname -s | sed s/${DEFAULT_USER}/U/)"
+  [[ -n "$symbols" ]] && prompt_segment black default "$symbols"
 }
 
 # Git: branch/detached head, dirty status
@@ -129,38 +132,25 @@ prompt_git() {
 }
 
 prompt_hg() {
-  local rev status
-  if $(hg id >/dev/null 2>&1); then
-    if $(hg prompt >/dev/null 2>&1); then
-      if [[ $(hg prompt "{status|unknown}") = "?" ]]; then
-        # if files are not added
-        prompt_segment red white
-        st='±'
-      elif [[ -n $(hg prompt "{status|modified}") ]]; then
-        # if any modification
-        prompt_segment yellow black
-        st='±'
-      else
-        # if working copy is clean
-        prompt_segment green black
-      fi
-      echo -n $(hg prompt "☿ {rev}@{branch}") $st
-    else
-      st=""
-      rev=$(hg id -n 2>/dev/null | sed 's/[^-0-9]//g')
-      branch=$(hg id -b 2>/dev/null)
-      if `hg st | grep -q "^\?"`; then
-        prompt_segment red black
-        st='±'
-      elif `hg st | grep -q "^[MA]"`; then
-        prompt_segment yellow black
-        st='±'
-      else
-        prompt_segment green black
-      fi
-      echo -n "☿ $rev@$branch" $st
-    fi
-  fi
+  # Fast prompt
+  hg_prompt_info
+  # Slow prompt
+# local rev status
+# if $(hg id >/dev/null 2>&1); then
+#   st=""
+#   rev=$(hg id -n 2>/dev/null | sed 's/[^-0-9]//g')
+#   branch=$(hg id -b 2>/dev/null)
+#   if `hg st | grep -q "^\?"`; then
+#     prompt_segment red black
+#     st='±'
+#   elif `hg st | grep -q "^[MA]"`; then
+#     prompt_segment yellow black
+#     st='±'
+#   else
+#     prompt_segment green black
+#   fi
+#   echo -n "☿ $rev@$branch" $st
+# fi
 }
 
 # Dir: current working directory
@@ -183,11 +173,11 @@ prompt_virtualenv() {
 prompt_status() {
   local symbols
   symbols=()
-  [[ $RETVAL -ne 0 ]] && symbols+="%{%F{red}%}✘"
+  [[ $RETVAL -ne 0 ]] && symbols+="%{%F{red}%}✗" || symbols+=" "
   [[ $UID -eq 0 ]] && symbols+="%{%F{yellow}%}⚡"
   [[ $(jobs -l | wc -l) -gt 0 ]] && symbols+="%{%F{cyan}%}⚙"
 
-  [[ -n "$symbols" ]] && prompt_segment black default "$symbols"
+  prompt_segment black default "$symbols"
 }
 
 ## Main prompt
