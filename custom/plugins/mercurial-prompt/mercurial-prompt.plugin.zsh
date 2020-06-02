@@ -1,13 +1,13 @@
 # Updates hg root
 function update_hg_root() {
-  local path=$(pwd)
-  while [[ $path != "/" && ( ! -d "$path/.hg" ) ]]; do
-    local v="$path/.."
-    path=$v:A
+  local hgpath=$(pwd)
+  while [[ $hgpath != "/" && ( ! -d "$hgpath/.hg" ) ]]; do
+    local v="$hgpath/.."
+    hgpath=$v:A
   done
 
-  if [[ $path != "/" ]]; then
-    HG_ROOT=$path
+  if [[ $hgpath != "/" ]]; then
+    HG_ROOT=$hgpath
   else
     HG_ROOT="" # hg repository not found
   fi
